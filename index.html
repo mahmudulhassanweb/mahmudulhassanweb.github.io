@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Resume Summary</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FDFBF8;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 450px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .tab-btn.active {
+            background-color: #0F766E;
+            color: #FFFFFF;
+            font-weight: 600;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .gemini-btn {
+            transition: all 0.3s ease;
+        }
+        .gemini-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        #gemini-output p {
+            margin-bottom: 0.75rem;
+        }
+        #gemini-output h4 {
+            font-weight: 600;
+            color: #0d9488;
+            margin-top: 1rem;
+            margin-bottom: 0.25rem;
+        }
+    </style>
+    <!-- Chosen Palette: Warm Neutrals with Teal Accent -->
+    <!-- Application Structure Plan: The SPA is designed as a single-view interactive dashboard to quickly convey the candidate's value. It starts with a static summary for immediate context. The core of the app is a tab-based section for "Core Competencies," allowing users (recruiters, hiring managers) to self-select and explore the areas most relevant to them (Research, Engineering, Leadership) without being overwhelmed by a wall of text. A new "AI-Powered Insights" section uses the Gemini API to generate tailored content (project ideas, interview questions), showcasing modern technical acumen. This is followed by a visual, categorized skills chart for at-a-glance technical assessment and standout "Impact Metric" cards to highlight key achievements. This thematic, non-linear structure enhances usability by breaking down dense information into digestible, user-driven chunks, making exploration faster and more efficient than reading a static document. -->
+    <!-- Visualization & Content Choices: 
+        1.  Summary Text -> Goal: Inform -> Presentation: Styled Text Block -> Interaction: None -> Justification: Provides immediate, high-level context upon landing.
+        2.  Core Competencies -> Goal: Organize/Explore -> Presentation: Tabbed Interface (HTML/JS) -> Interaction: Click tabs to show/hide relevant content -> Justification: Allows users to drill into specific areas of expertise (Research, Engineering, Leadership) based on their interests. This is a highly efficient way to navigate detailed information. Method: Vanilla JS DOM manipulation.
+        3.  AI Insights -> Goal: Engage/Demonstrate -> Presentation: Interactive Buttons & Dynamic Text Area -> Interaction: Click to call Gemini API and generate text -> Justification: Adds a "wow" factor, demonstrates familiarity with AI/LLMs, and provides genuinely useful, context-specific content for recruiters. Method: Gemini API (gemini-2.5-flash-preview-05-20).
+        4.  Technical Skills -> Goal: Compare/Inform -> Presentation: Horizontal Bar Chart -> Interaction: Hover for tooltips -> Justification: Visually groups and presents technical skills, making proficiency areas easier to compare and digest than a simple list. Library: Chart.js (Canvas).
+        5.  Achievements -> Goal: Inform/Emphasize -> Presentation: Stat Cards (HTML/Tailwind) -> Interaction: None -> Justification: Makes key quantitative and qualitative achievements (900+ students, publications) highly visible and impactful. Method: HTML/Tailwind.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+</head>
+<body class="text-gray-800">
+
+    <main class="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
+
+        <header class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold text-teal-800 tracking-tight">Professional Profile</h1>
+            <p class="mt-3 text-lg text-gray-600">An Interactive Summary of Skills & Experience</p>
+        </header>
+
+        <section id="summary" class="bg-white/60 backdrop-blur-sm rounded-xl p-6 md:p-8 shadow-sm border border-gray-200 mb-12">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">Overview</h2>
+            <p id="summary-text" class="text-gray-700 leading-relaxed">
+                Accomplished Mechanical Engineering Doctoral Researcher at UW–Madison specializing in laser-based manufacturing, computer vision, and micro-polishing. Proven experience in designing high-power laser platforms, developing advanced multiphysics simulations, and applying image processing for quality control. A dedicated educator and published author with a strong track record of mentoring over 900 students and leading successful community-wide initiatives.
+            </p>
+        </section>
+
+        <section id="competencies" class="mb-12">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-gray-900">Core Competencies</h2>
+                <p class="mt-2 text-md text-gray-600 max-w-2xl mx-auto">Explore the pillars of my expertise. Click a category below to see detailed experience and skills in that area.</p>
+            </div>
+            
+            <nav class="flex flex-wrap justify-center gap-2 md:gap-4 mb-8">
+                <button class="tab-btn active transition-all duration-300 ease-in-out px-4 py-2 text-sm md:px-6 md:py-3 md:text-base font-medium rounded-full shadow-sm border border-gray-200 bg-white hover:bg-teal-50" data-target="research">🔬 Research & Specialization</button>
+                <button class="tab-btn transition-all duration-300 ease-in-out px-4 py-2 text-sm md:px-6 md:py-3 md:text-base font-medium rounded-full shadow-sm border border-gray-200 bg-white hover:bg-teal-50" data-target="engineering">⚙️ Applied Engineering & Design</button>
+                <button class="tab-btn transition-all duration-300 ease-in-out px-4 py-2 text-sm md:px-6 md:py-3 md:text-base font-medium rounded-full shadow-sm border border-gray-200 bg-white hover:bg-teal-50" data-target="leadership">👨‍🏫 Leadership & Mentorship</button>
+            </nav>
+
+            <div class="bg-white rounded-xl p-6 md:p-8 shadow-sm border border-gray-200 min-h-[250px]">
+                <div id="research" class="tab-content active">
+                    <h3 class="text-xl font-semibold text-teal-800 mb-4">Research & Specialization</h3>
+                    <ul class="space-y-3 text-gray-700 list-disc list-inside">
+                        <li>Specializing in advanced laser-based manufacturing techniques and applications.</li>
+                        <li>Focused research on laser micro-polishing and surface structuring for high-precision components.</li>
+                        <li>Extensive use of image processing and computer vision for in-situ monitoring and experimental data analysis.</li>
+                        <li>Development of novel methodologies for quality control in laser manufacturing processes.</li>
+                    </ul>
+                </div>
+                <div id="engineering" class="tab-content">
+                    <h3 class="text-xl font-semibold text-teal-800 mb-4">Applied Engineering & Design</h3>
+                    <ul class="space-y-3 text-gray-700 list-disc list-inside">
+                        <li>Experienced in the complete design and development lifecycle of high-power laser platforms.</li>
+                        <li>Proficient in creating advanced FEA and multiphysics simulations to model complex physical phenomena.</li>
+                        <li>Skilled in CAD for component design, assembly, and drafting.</li>
+                        <li>Hands-on experience with machining, prototyping, and automation using PLCs.</li>
+                    </ul>
+                </div>
+                <div id="leadership" class="tab-content">
+                    <h3 class="text-xl font-semibold text-teal-800 mb-4">Leadership & Mentorship</h3>
+                    <ul class="space-y-3 text-gray-700 list-disc list-inside">
+                        <li>Passionate educator and mentor, having taught and guided over 900 students across various manufacturing and mechanics courses.</li>
+                        <li>Co-authorship in collaborative international publications, contributing to the global scientific community.</li>
+                        <li>Active leader in fostering community engagement through the organization of large-scale cultural and academic initiatives.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="gemini-insights" class="mb-12">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-gray-900">✨ AI-Powered Insights</h2>
+                <p class="mt-2 text-md text-gray-600 max-w-2xl mx-auto">Leverage AI to explore this profile further. Click a button to generate content based on my experience.</p>
+            </div>
+            <div class="bg-white rounded-xl p-6 md:p-8 shadow-sm border border-gray-200">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                     <button id="project-ideas-btn" class="gemini-btn w-full bg-teal-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500">Generate Project Ideas</button>
+                     <button id="interview-questions-btn" class="gemini-btn w-full bg-teal-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500">Suggest Interview Questions</button>
+                     <button id="cover-letter-btn" class="gemini-btn w-full bg-teal-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500">Draft Cover Letter Snippet</button>
+                </div>
+                <div id="gemini-output-container" class="mt-4 p-4 min-h-[150px] bg-gray-50 rounded-lg border border-gray-200">
+                    <div id="gemini-output" class="text-gray-700">Select an option above to generate insights here.</div>
+                    <div id="gemini-loading" class="hidden text-center">
+                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
+                        <p class="mt-2 text-gray-600">Generating insights...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="skills" class="mb-12">
+             <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-gray-900">Technical Skillset</h2>
+                <p class="mt-2 text-md text-gray-600 max-w-2xl mx-auto">A visual overview of key technical skills, categorized by domain. This represents areas of significant experience and proficiency.</p>
+            </div>
+            <div class="bg-white rounded-xl p-6 md:p-8 shadow-sm border border-gray-200">
+                 <div class="chart-container">
+                    <canvas id="skillsChart"></canvas>
+                </div>
+            </div>
+        </section>
+        
+        <section id="impact">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+                <div class="bg-teal-600 text-white rounded-xl p-8 shadow-lg">
+                    <p class="text-5xl font-bold">900+</p>
+                    <p class="mt-2 text-lg text-teal-100">Students Taught & Mentored</p>
+                </div>
+                <div class="bg-gray-700 text-white rounded-xl p-8 shadow-lg">
+                    <p class="text-5xl font-bold">Published</p>
+                    <p class="mt-2 text-lg text-gray-200">International Co-Author</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const tabs = document.querySelectorAll('.tab-btn');
+            const contents = document.querySelectorAll('.tab-content');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const target = tab.getAttribute('data-target');
+
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+
+                    contents.forEach(content => {
+                        content.classList.remove('active');
+                        if (content.id === target) {
+                            content.classList.add('active');
+                        }
+                    });
+                });
+            });
+            
+            const skillData = {
+                labels: [
+                    'Laser Manufacturing',
+                    'Simulation (FEA, Multiphysics)',
+                    'Computer Vision & Image Processing',
+                    'CAD & Prototyping',
+                    'Metrology & Quality Control',
+                    'Automation & PLC'
+                ],
+                datasets: [{
+                    label: 'Proficiency',
+                    data: [95, 90, 85, 90, 80, 75],
+                    backgroundColor: 'rgba(15, 118, 110, 0.6)',
+                    borderColor: 'rgba(13, 148, 136, 1)',
+                    borderWidth: 2,
+                    borderRadius: 4,
+                    borderSkipped: false,
+                }]
+            };
+
+            const chartOptions = {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: '#0F766E',
+                        titleFont: {
+                            size: 14,
+                            weight: 'bold'
+                        },
+                        bodyFont: {
+                            size: 12
+                        },
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.x !== null) {
+                                    label += context.parsed.x + '%';
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        max: 100,
+                        grid: {
+                           color: '#E5E7EB'
+                        },
+                        ticks: {
+                            color: '#374151',
+                            font: {
+                                size: 12,
+                            },
+                             callback: function(value) {
+                                return value + "%"
+                            }
+                        }
+                    },
+                    y: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: '#374151',
+                            font: {
+                                size: 14,
+                                weight: '500'
+                            }
+                        }
+                    }
+                }
+            };
+            
+            const ctx = document.getElementById('skillsChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: skillData,
+                options: chartOptions
+            });
+
+            const projectIdeasBtn = document.getElementById('project-ideas-btn');
+            const interviewQuestionsBtn = document.getElementById('interview-questions-btn');
+            const coverLetterBtn = document.getElementById('cover-letter-btn');
+            const geminiOutput = document.getElementById('gemini-output');
+            const geminiLoading = document.getElementById('gemini-loading');
+            const geminiBtns = document.querySelectorAll('.gemini-btn');
+            const summaryText = document.getElementById('summary-text').textContent.trim();
+
+            const callGeminiAPI = async (prompt, retries = 3, delay = 1000) => {
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                
+                const payload = {
+                    contents: [{ parts: [{ text: prompt }] }],
+                };
+
+                for (let i = 0; i < retries; i++) {
+                    try {
+                        const response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`API request failed with status ${response.status}`);
+                        }
+
+                        const result = await response.json();
+                        const candidate = result.candidates?.[0];
+
+                        if (candidate && candidate.content?.parts?.[0]?.text) {
+                            return candidate.content.parts[0].text;
+                        } else {
+                            throw new Error('Invalid response structure from API');
+                        }
+                    } catch (error) {
+                        if (i === retries - 1) {
+                            console.error("Gemini API call failed after multiple retries:", error);
+                            return "Sorry, there was an error generating the content. Please try again later.";
+                        }
+                        await new Promise(res => setTimeout(res, delay * Math.pow(2, i)));
+                    }
+                }
+            };
+            
+            const handleGeneration = async (prompt) => {
+                geminiBtns.forEach(btn => btn.disabled = true);
+                geminiOutput.classList.add('hidden');
+                geminiLoading.classList.remove('hidden');
+
+                const result = await callGeminiAPI(prompt);
+                const formattedResult = result
+                    .replace(/\*\*(.*?)\*\*/g, '<h4>$1</h4>') 
+                    .replace(/\*/g, '<br>• ')
+                    .replace(/\n/g, '<br>');
+
+                geminiOutput.innerHTML = formattedResult;
+
+                geminiLoading.classList.add('hidden');
+                geminiOutput.classList.remove('hidden');
+                geminiBtns.forEach(btn => btn.disabled = false);
+            };
+
+            projectIdeasBtn.addEventListener('click', () => {
+                const prompt = `Based on the following professional summary, generate 2-3 innovative and concise project ideas that combine the candidate's core skills. Format the response with a short title for each idea. Summary: "${summaryText}"`;
+                handleGeneration(prompt);
+            });
+
+            interviewQuestionsBtn.addEventListener('click', () => {
+                const prompt = `Based on the following professional summary, generate 2 technical and 2 behavioral interview questions that a hiring manager for an R&D or advanced manufacturing role might ask this candidate. Format the response with clear headings for "Technical Questions" and "Behavioral Questions". Summary: "${summaryText}"`;
+                handleGeneration(prompt);
+            });
+
+            coverLetterBtn.addEventListener('click', () => {
+                const prompt = `Write a concise, impactful paragraph (3-4 sentences) for a cover letter. This paragraph should be from the perspective of the candidate and highlight how their skills from the summary below align with a hypothetical 'Laser Process Engineer' role. Summary: "${summaryText}"`;
+                handleGeneration(prompt);
+            });
+        });
+    </script>
+</body>
+</html>
+
